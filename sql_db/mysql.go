@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"fmt"
 	"gitlab.vivas.vn/go/libinternal/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -26,8 +27,24 @@ func (p *Mysql_db) LogError(format string, args ...interface{}) {
 	p.logger.Log(logger.Error, "[mysql] "+format, args...)
 }
 
-func mysql_connectionDB(p *Mysql_db) bool {
+func mysql_open_connection(p *Mysql_db) bool {
 	var err error
+
+	createDBDsn := fmt.Sprintf("%s:%s@tcp(%s)/", p.MYSQL_DB_USERNAME, p.MYSQL_DB_PASSWORD, p.MYSQL_DB_HOST)
+	var database *gorm.DB
+	database, err = gorm.Open(mysql.Open(createDBDsn), &gorm.Config{})
+	if err == nil {
+		_ = database.Exec("CREATE DATABASE IF NOT EXISTS " + p.MYSQL_DB_NAME + ";")
+
+	}else{
+		return false
+	}
+
+	defer func() {
+		dbInstance, _ := database.DB()
+		_ = dbInstance.Close()
+	}()
+
 	dsn := p.MYSQL_DB_USERNAME + ":" + p.MYSQL_DB_PASSWORD + "@tcp" + "(" + p.MYSQL_DB_HOST + ")/" + p.MYSQL_DB_NAME + "?" + "parseTime=true&loc=Local"
 
 	p.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
@@ -52,7 +69,7 @@ func NEW_MYSQL_DB(user string, pass string, db_name string, host string, _logger
 }
 
 func (p *Mysql_db) START_CONNECT_MYSQL_DB(didConnected func(db *gorm.DB)) bool {
-	ok := mysql_connectionDB(p)
+	ok := mysql_open_connection(p)
 	if ok {
 		didConnected(p.db)
 	}
