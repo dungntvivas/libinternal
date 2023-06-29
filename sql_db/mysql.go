@@ -45,7 +45,7 @@ func mysql_open_connection(p *Mysql_db) bool {
 		_ = dbInstance.Close()
 	}()
 
-	dsn := p.MYSQL_DB_USERNAME + ":" + p.MYSQL_DB_PASSWORD + "@tcp" + "(" + p.MYSQL_DB_HOST + ")/" + p.MYSQL_DB_NAME + "?" + "parseTime=true&loc=Local"
+	dsn := p.MYSQL_DB_USERNAME + ":" + p.MYSQL_DB_PASSWORD + "@tcp" + "(" + p.MYSQL_DB_HOST + ")/" + p.MYSQL_DB_NAME + "?" + "charset=utf8mb4&parseTime=true&loc=Local"
 
 	p.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		//Logger: glog.Default.LogMode(glog.Silent),
