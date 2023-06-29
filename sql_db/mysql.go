@@ -34,7 +34,7 @@ func mysql_open_connection(p *Mysql_db) bool {
 	var database *gorm.DB
 	database, err = gorm.Open(mysql.Open(createDBDsn), &gorm.Config{})
 	if err == nil {
-		_ = database.Exec("CREATE DATABASE IF NOT EXISTS " + p.MYSQL_DB_NAME + ";")
+		_ = database.Exec("CREATE DATABASE IF NOT EXISTS " + p.MYSQL_DB_NAME + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
 
 	}else{
 		return false
