@@ -2,7 +2,7 @@ package sqldb
 
 import (
 	"fmt"
-	"gitlab.vivas.vn/go/libinternal/logger"
+	"github.com/DungntVccorp/libinternal/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -36,7 +36,7 @@ func mysql_open_connection(p *Mysql_db) bool {
 	if err == nil {
 		_ = database.Exec("CREATE DATABASE IF NOT EXISTS " + p.MYSQL_DB_NAME + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
 
-	}else{
+	} else {
 		return false
 	}
 

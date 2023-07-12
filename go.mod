@@ -1,4 +1,4 @@
-module gitlab.vivas.vn/go/libinternal
+module github.com/DungntVccorp/libinternal
 
 go 1.19
 
