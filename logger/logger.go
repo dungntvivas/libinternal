@@ -1,124 +1,49 @@
+// Package logger contains a logger implementation.
 package logger
 
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"os"
-	"runtime"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/gookit/color"
 )
 
-// Level is a log level.
-type Level int
-
-// Log levels.
-const (
-	Debug Level = iota + 1
-	Info
-	Warn
-	Error
-)
-
-// Destination is a log destination.
-type Destination int
-
-const (
-	// DestinationStdout writes logs to the standard output.
-	DestinationStdout Destination = iota
-
-	// DestinationFile writes logs to a file.
-	DestinationFile
-
-	// DestinationSyslog writes logs to the system logger.
-	DestinationSyslog
-
-	// DestinationUdplog writes logs server
-	DestinationUdplog
-)
-
-type udpConfig struct {
-	host string
-	port int
-	ServerName string
-}
-
 // Logger is a log handler.
 type Logger struct {
-	level        Level
-	destinations map[Destination]struct{}
+	level Level
 
+	destinations []destination
 	mutex        sync.Mutex
-	file         *os.File
-	syslog       io.WriteCloser
-	udpLog 		 *UdpLog
-	stdoutBuffer bytes.Buffer
-	fileBuffer   bytes.Buffer
-	syslogBuffer bytes.Buffer
 }
 
 // New allocates a log handler.
-func New(level Level, destinations map[Destination]struct{}, filePath string) (*Logger, error) {
+func New(level Level, destinations []Destination, filePath string) (*Logger, error) {
 	lh := &Logger{
-		level:        level,
-		destinations: destinations,
+		level: level,
 	}
 
-	if _, ok := destinations[DestinationFile]; ok {
-		var err error
-		lh.file, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			lh.Close()
-			return nil, err
-		}
-	}
+	for _, destType := range destinations {
+		switch destType {
+		case DestinationStdout:
+			lh.destinations = append(lh.destinations, newDestionationStdout())
 
-	if _, ok := destinations[DestinationSyslog]; ok {
-		var err error
-		lh.syslog, err = newSyslog("myserver")
-		if err != nil {
-			lh.Close()
-			return nil, err
-		}
-	}
-	return lh, nil
-}
+		case DestinationFile:
+			dest, err := newDestinationFile(filePath)
+			if err != nil {
+				lh.Close()
+				return nil, err
+			}
+			lh.destinations = append(lh.destinations, dest)
 
-func New2(level Level, destinations map[Destination]struct{}, filePath string,udpHost string,udpPort int,svName  string) (*Logger, error) {
-	lh := &Logger{
-		level:        level,
-		destinations: destinations,
-	}
-
-	if _, ok := destinations[DestinationFile]; ok {
-		var err error
-		lh.file, err = os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-		if err != nil {
-			lh.Close()
-			return nil, err
-		}
-	}
-
-	if _, ok := destinations[DestinationSyslog]; ok {
-		var err error
-		lh.syslog, err = newSyslog("myserver")
-		if err != nil {
-			lh.Close()
-			return nil, err
-		}
-	}
-	if _,ok := destinations[DestinationUdplog]; ok {
-		/// UDP Log
-		var err error
-
-		lh.udpLog,err = NewUdplog(&udpConfig{host: udpHost,port: udpPort,ServerName: svName})
-		if err != nil {
-			lh.Close()
-			return nil, err
+		case DestinationSyslog:
+			dest, err := newDestinationSyslog()
+			if err != nil {
+				lh.Close()
+				return nil, err
+			}
+			lh.destinations = append(lh.destinations, dest)
 		}
 	}
 
@@ -127,16 +52,8 @@ func New2(level Level, destinations map[Destination]struct{}, filePath string,ud
 
 // Close closes a log handler.
 func (lh *Logger) Close() {
-	if lh.file != nil {
-		lh.file.Close()
-	}
-
-	if lh.syslog != nil {
-		lh.syslog.Close()
-	}
-
-	if lh.udpLog != nil {
-		close(lh.udpLog.done)
+	for _, dest := range lh.destinations {
+		dest.close()
 	}
 }
 
@@ -157,12 +74,11 @@ func itoa(i int, wid int) []byte {
 	return b[bp:]
 }
 
-func writeTime(buf *bytes.Buffer, doColor bool) {
+func writeTime(buf *bytes.Buffer, t time.Time, useColor bool) {
 	var intbuf bytes.Buffer
 
 	// date
-	now := time.Now()
-	year, month, day := now.Date()
+	year, month, day := t.Date()
 	intbuf.Write(itoa(year, 4))
 	intbuf.WriteByte('/')
 	intbuf.Write(itoa(int(month), 2))
@@ -171,7 +87,7 @@ func writeTime(buf *bytes.Buffer, doColor bool) {
 	intbuf.WriteByte(' ')
 
 	// time
-	hour, min, sec := now.Clock()
+	hour, min, sec := t.Clock()
 	intbuf.Write(itoa(hour, 2))
 	intbuf.WriteByte(':')
 	intbuf.Write(itoa(min, 2))
@@ -179,62 +95,38 @@ func writeTime(buf *bytes.Buffer, doColor bool) {
 	intbuf.Write(itoa(sec, 2))
 	intbuf.WriteByte(' ')
 
-	if doColor {
+	if useColor {
 		buf.WriteString(color.RenderString(color.Gray.Code(), intbuf.String()))
 	} else {
 		buf.WriteString(intbuf.String())
 	}
 }
-func trace() (string,int,string) {
-	pc := make([]uintptr, 10)  // at least 1 entry needed
-	runtime.Callers(4, pc)
-	f := runtime.FuncForPC(pc[0])
-	file, line := f.FileLine(pc[0])
-	_file :=  strings.Split(file, "/")
-	_name := strings.Split(f.Name(), ".")
-	return _file[len(_file)-1],line-1,_name[len(_name)-1]
-}
 
-
-func writeFileInfo(buf *bytes.Buffer, doColor bool){
-	var inbuf bytes.Buffer
-	_f,l,_ := trace()
-	inbuf.WriteString(_f)
-	inbuf.WriteByte(':')
-	inbuf.Write(itoa(l, 2))
-	inbuf.WriteByte(' ')
-	if doColor {
-		buf.WriteString(color.RenderString(color.Blue.Code(), inbuf.String()))
-	} else {
-		buf.WriteString(inbuf.String())
-	}
-}
-
-func writeLevel(buf *bytes.Buffer, level Level, doColor bool) {
+func writeLevel(buf *bytes.Buffer, level Level, useColor bool) {
 	switch level {
 	case Debug:
-		if doColor {
+		if useColor {
 			buf.WriteString(color.RenderString(color.Debug.Code(), "DEB"))
 		} else {
 			buf.WriteString("DEB")
 		}
 
 	case Info:
-		if doColor {
+		if useColor {
 			buf.WriteString(color.RenderString(color.Green.Code(), "INF"))
 		} else {
 			buf.WriteString("INF")
 		}
 
 	case Warn:
-		if doColor {
+		if useColor {
 			buf.WriteString(color.RenderString(color.Warn.Code(), "WAR"))
 		} else {
 			buf.WriteString("WAR")
 		}
 
 	case Error:
-		if doColor {
+		if useColor {
 			buf.WriteString(color.RenderString(color.Error.Code(), "ERR"))
 		} else {
 			buf.WriteString("ERR")
@@ -257,33 +149,9 @@ func (lh *Logger) Log(level Level, format string, args ...interface{}) {
 	lh.mutex.Lock()
 	defer lh.mutex.Unlock()
 
-	if _, ok := lh.destinations[DestinationStdout]; ok {
-		lh.stdoutBuffer.Reset()
-		writeTime(&lh.stdoutBuffer, true)
-		writeFileInfo(&lh.stdoutBuffer,true)
-		writeLevel(&lh.stdoutBuffer, level, true)
-		writeContent(&lh.stdoutBuffer, format, args)
-		os.Stdout.Write(lh.stdoutBuffer.Bytes())
-	}
+	t := time.Now()
 
-	if _, ok := lh.destinations[DestinationFile]; ok {
-		lh.fileBuffer.Reset()
-		writeTime(&lh.fileBuffer, false)
-		writeFileInfo(&lh.stdoutBuffer,false)
-		writeLevel(&lh.fileBuffer, level, false)
-		writeContent(&lh.fileBuffer, format, args)
-		lh.file.Write(lh.fileBuffer.Bytes())
-	}
-
-	if _, ok := lh.destinations[DestinationSyslog]; ok {
-		lh.syslogBuffer.Reset()
-		writeTime(&lh.syslogBuffer, false)
-		writeFileInfo(&lh.stdoutBuffer,false)
-		writeLevel(&lh.syslogBuffer, level, false)
-		writeContent(&lh.syslogBuffer, format, args)
-		lh.syslog.Write(lh.syslogBuffer.Bytes())
-	}
-	if _, ok := lh.destinations[DestinationUdplog]; ok {
-		lh.udpLog.Log(fmt.Sprintf(format, args...))
+	for _, dest := range lh.destinations {
+		dest.log(t, level, format, args...)
 	}
 }
