@@ -13,7 +13,7 @@ type Mysql_db struct {
 	MYSQL_DB_NAME     string
 	MYSQL_DB_HOST     string
 	logger            *logger.Logger
-
+    cf *gorm.Config
 	db *gorm.DB
 }
 
@@ -32,7 +32,7 @@ func mysql_open_connection(p *Mysql_db) bool {
 
 	createDBDsn := fmt.Sprintf("%s:%s@tcp(%s)/", p.MYSQL_DB_USERNAME, p.MYSQL_DB_PASSWORD, p.MYSQL_DB_HOST)
 	var database *gorm.DB
-	database, err = gorm.Open(mysql.Open(createDBDsn), &gorm.Config{})
+	database, err = gorm.Open(mysql.Open(createDBDsn), p.cf)
 	if err == nil {
 		_ = database.Exec("CREATE DATABASE IF NOT EXISTS " + p.MYSQL_DB_NAME + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
 
