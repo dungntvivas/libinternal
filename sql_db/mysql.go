@@ -13,8 +13,8 @@ type Mysql_db struct {
 	MYSQL_DB_NAME     string
 	MYSQL_DB_HOST     string
 	logger            *logger.Logger
-    cf *gorm.Config
-	db *gorm.DB
+	cf                *gorm.Config
+	db                *gorm.DB
 }
 
 func (p *Mysql_db) LogInfo(format string, args ...interface{}) {
@@ -57,13 +57,14 @@ func mysql_open_connection(p *Mysql_db) bool {
 	return true
 }
 
-func NEW_MYSQL_DB(user string, pass string, db_name string, host string, _logger *logger.Logger) (*Mysql_db, bool) {
+func NEW_MYSQL_DB(user string, pass string, db_name string, host string, _logger *logger.Logger, _cf *gorm.Config) (*Mysql_db, bool) {
 	p := &Mysql_db{
 		MYSQL_DB_USERNAME: user,
 		MYSQL_DB_PASSWORD: pass,
 		MYSQL_DB_NAME:     db_name,
 		MYSQL_DB_HOST:     host,
 		logger:            _logger,
+		cf:                _cf,
 	}
 	return p, true
 }
