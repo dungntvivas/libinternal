@@ -32,11 +32,11 @@ func newDestinationUdpLog(server_address string, serverName string) (destination
 	if err != nil {
 		return nil, err
 	}
-
+	_con.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	p := &destinationUdpLog{
 		server_address: server_address,
 		server_name:    serverName,
-		chMsg:          make(chan string, 100),
+		chMsg:          make(chan string, 100_000),
 		done:           make(chan struct{}),
 		conn:           _con,
 	}
