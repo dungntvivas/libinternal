@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"time"
 )
@@ -74,10 +75,25 @@ loop:
 				if err != nil {
 					continue
 				}
-				p.conn.Write(marshal)
+				fmt.Println(string(marshal))
+				_, err = p.conn.Write(marshal)
+				if err != nil {
+					fmt.Println("Reconect udp server")
+					udpAddr, err := net.ResolveUDPAddr("udp", p.server_address)
+					if err != nil {
+						continue
+
+					}
+					_con, err := net.DialUDP("udp", nil, udpAddr)
+					if err != nil {
+						continue
+					}
+					_con.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+					p.conn = _con
+					continue
+				}
 				bufio.NewReader(p.conn).ReadString('\n')
 			}
 		}
 	}
-
 }
