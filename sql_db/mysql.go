@@ -47,9 +47,7 @@ func mysql_open_connection(p *Mysql_db) bool {
 
 	dsn := p.MYSQL_DB_USERNAME + ":" + p.MYSQL_DB_PASSWORD + "@tcp" + "(" + p.MYSQL_DB_HOST + ")/" + p.MYSQL_DB_NAME + "?" + "charset=utf8mb4&parseTime=true&loc=Local"
 
-	p.db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
-		//Logger: glog.Default.LogMode(glog.Silent),
-	})
+	p.db, err = gorm.Open(mysql.Open(dsn), p.cf)
 	if err != nil {
 		p.LogInfo("Open Connection Error %v", err.Error())
 		return false
