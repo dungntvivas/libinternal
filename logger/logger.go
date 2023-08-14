@@ -50,6 +50,45 @@ func New(level Level, destinations []Destination, filePath string) (*Logger, err
 	return lh, nil
 }
 
+// New allocates a log handler.
+func New2(level Level, destinations []Destination, filePath string, udp_server string, server_name string) (*Logger, error) {
+	lh := &Logger{
+		level: level,
+	}
+
+	for _, destType := range destinations {
+		switch destType {
+		case DestinationStdout:
+			lh.destinations = append(lh.destinations, newDestionationStdout())
+
+		case DestinationFile:
+			dest, err := newDestinationFile(filePath)
+			if err != nil {
+				lh.Close()
+				return nil, err
+			}
+			lh.destinations = append(lh.destinations, dest)
+
+		case DestinationSyslog:
+			dest, err := newDestinationSyslog()
+			if err != nil {
+				lh.Close()
+				return nil, err
+			}
+			lh.destinations = append(lh.destinations, dest)
+		case DestinationUdplog:
+			dest, err := newDestinationUdpLog(udp_server, server_name)
+			if err != nil {
+				lh.Close()
+				return nil, err
+			}
+			lh.destinations = append(lh.destinations, dest)
+		}
+	}
+
+	return lh, nil
+}
+
 // Close closes a log handler.
 func (lh *Logger) Close() {
 	for _, dest := range lh.destinations {

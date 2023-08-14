@@ -16,6 +16,8 @@ const (
 
 	// DestinationSyslog writes logs to the system logger.
 	DestinationSyslog
+
+	DestinationUdplog
 )
 
 type destination interface {
