@@ -75,7 +75,6 @@ loop:
 				if err != nil {
 					continue
 				}
-				fmt.Println(string(marshal))
 				_, err = p.conn.Write(marshal)
 				if err != nil {
 					fmt.Println("Reconect udp server")
