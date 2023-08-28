@@ -71,20 +71,22 @@ loop:
 					Msg:     m,
 				}
 				marshal, err := json.Marshal(&msg)
-
 				if err != nil {
+					fmt.Println("%v",err.Error())
 					continue
 				}
 				_, err = p.conn.Write(marshal)
 				if err != nil {
-					fmt.Println("Reconect udp server")
+					fmt.Println("Reconect udp server %v",err.Error())
 					udpAddr, err := net.ResolveUDPAddr("udp", p.server_address)
 					if err != nil {
+						fmt.Println("%v",err.Error())
 						continue
 
 					}
 					_con, err := net.DialUDP("udp", nil, udpAddr)
 					if err != nil {
+						fmt.Println("%v",err.Error())
 						continue
 					}
 					_con.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
