@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -48,8 +47,6 @@ func newDestinationUdpLog(server_address string, serverName string) (destination
 
 func (d *destinationUdpLog) log(t time.Time, level Level, format string, args ...interface{}) {
 	d.buf.Reset()
-	writeTime(&d.buf, t, false)
-	writeLevel(&d.buf, level, false)
 	writeContent(&d.buf, format, args)
 	d.chMsg <- d.buf.String()
 }
@@ -72,28 +69,27 @@ loop:
 				}
 				marshal, err := json.Marshal(&msg)
 				if err != nil {
-					fmt.Println("%v",err.Error())
+					fmt.Println("%v", err.Error())
 					continue
 				}
 				_, err = p.conn.Write(marshal)
 				if err != nil {
-					fmt.Println("Reconect udp server %v",err.Error())
+					fmt.Println("Reconect udp server %v", err.Error())
 					udpAddr, err := net.ResolveUDPAddr("udp", p.server_address)
 					if err != nil {
-						fmt.Println("%v",err.Error())
+						fmt.Println("%v", err.Error())
 						continue
 
 					}
 					_con, err := net.DialUDP("udp", nil, udpAddr)
 					if err != nil {
-						fmt.Println("%v",err.Error())
+						fmt.Println("%v", err.Error())
 						continue
 					}
 					_con.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 					p.conn = _con
 					continue
 				}
-				bufio.NewReader(p.conn).ReadString('\n')
 			}
 		}
 	}

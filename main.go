@@ -8,7 +8,7 @@ import (
 )
 
 func fnlog() {
-	_logger, _ := logger.New2(logger.Info, []logger.Destination{logger.DestinationFile, logger.DestinationUdplog,logger.DestinationStdout}, "test.log", "127.0.0.1:44953", "ServerA")
+	_logger, _ := logger.New2(logger.Info, []logger.Destination{logger.DestinationFile, logger.DestinationUdplog, logger.DestinationStdout}, "test.log", "127.0.0.1:44953", "ServerA")
 
 	//_db := redisDB.New(_logger,&redis.ClusterOptions{
 	//	Addrs: []string{"10.3.3.33:6379"},
@@ -19,41 +19,31 @@ func fnlog() {
 	//	},
 	//
 	//})
-	_db := redisDB.NewRedisClient(_logger,&redis.UniversalOptions{
-		Addrs: []string{"10.3.3.33:6379"},
-		Username: "default",
-		Password: "123456a@",
-		DB: 10,
-		ReadTimeout: time.Second * 10,
-		WriteTimeout: time.Second*10,
-		DialTimeout:time.Second*5,
-		PoolSize: 10,
-
+	_db := redisDB.NewRedisClient(_logger, &redis.UniversalOptions{
+		Addrs:        []string{"10.3.3.33:6379"},
+		Username:     "default",
+		Password:     "123456a@",
+		DB:           10,
+		ReadTimeout:  time.Second * 10,
+		WriteTimeout: time.Second * 10,
+		DialTimeout:  time.Second * 5,
+		PoolSize:     10,
 	})
-	_logger.Log(logger.Info,"%v",_db.Run())
+	_logger.Log(logger.Info, "%v", _db.Run())
 
-
-
-
-	//for  {
-	//	var i int = 0
-	//	for i < 10 {
-	//		_logger.Log(logger.Info, "%v", i)
-	//		i++
-	//	}
-	//	_logger.Log(logger.Info, "ABC ")
-	//	time.Sleep(time.Second * 20)
-	//}
-
-
-
-
+	for {
+		var i int = 0
+		for i < 10 {
+			_logger.Log(logger.Info, "%v", i)
+			i++
+		}
+		_logger.Log(logger.Info, "ABC ")
+		time.Sleep(time.Second * 5)
+	}
 
 }
 
 func main() {
-
-
 
 	fnlog()
 	time.Sleep(time.Second * 5)
