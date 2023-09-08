@@ -5,6 +5,7 @@ import (
 	"github.com/DungntVccorp/libinternal/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Mysql_db struct {
@@ -52,6 +53,14 @@ func mysql_open_connection(p *Mysql_db) bool {
 		p.LogInfo("Open Connection Error %v", err.Error())
 		return false
 	}
+	sqlDB, err := p.db.DB()
+	if err != nil {
+		// control error
+		return false
+	}
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(1_000)
+	sqlDB.SetConnMaxLifetime(time.Second * 30)
 	return true
 }
 
