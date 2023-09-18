@@ -10,7 +10,7 @@ import (
 )
 
 type GCache struct {
-	rdp        *redis.Client
+	rdp        redis.UniversalClient
 	mc         *memcache.Client
 	ctx        context.Context
 	cache_type int // 0 redis cache , 1 memcache
@@ -18,23 +18,25 @@ type GCache struct {
 
 func NewRedisCache(sentinelAddrs []string, userName string, password string, database int, masterName string, clientName string) (*GCache, bool) {
 
-	option := redis.FailoverOptions{
-		SentinelAddrs: sentinelAddrs,
-		Username:      userName,
-		Password:      password,
-		DB:            database,
+	rs_config := &redis.UniversalOptions{
+		Addrs:        sentinelAddrs,
+		Username:     userName,
+		Password:     password,
+		DB:           database,
+		MasterName:   masterName,
+		ClientName:   clientName,
+		ReadTimeout:  time.Second * 2,
+		WriteTimeout: time.Second * 2,
+		DialTimeout:  time.Second * 5,
+		MaxRetries:   5,
+		PoolSize:     10,
 	}
 	ctx := context.Background()
-	if len(masterName) != 0 {
-		option.MasterName = masterName
-	}
-	if len(clientName) != 0 {
-		option.ClientName = clientName
-	}
 
-	rdp := redis.NewFailoverClient(&option)
+	rdp := redis.NewUniversalClient(rs_config)
 	status := rdp.Ping(context.Background())
 	if status.Err() != nil {
+		fmt.Println(status.Err())
 		return nil, false
 	}
 	return &GCache{rdp: rdp, ctx: ctx, cache_type: 0}, true
@@ -120,4 +122,3 @@ func (p *GCache) Delete(key string) bool {
 	return false
 
 }
-
