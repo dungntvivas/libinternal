@@ -20,6 +20,13 @@ func VRSA_NEW() (*Vras, error) {
 	return p, err
 }
 
+func VRSA_NEW_WITH(bits int) (*Vras, error) {
+	p := &Vras{}
+	var err error
+	p.key, err = rsa.GenerateKey(rand.Reader, bits)
+	return p, err
+}
+
 func RSA_OAEP_Encrypt(secretMessage []byte, pKey *rsa.PublicKey) ([]byte, error) {
 
 	label := []byte("RDPA-VIVAS")
