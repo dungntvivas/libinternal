@@ -54,6 +54,9 @@ func (d *destinationUdpLog) log(t time.Time, level Level, format string, args ..
 func (d *destinationUdpLog) close() {
 	close(d.done)
 }
+func (d *destinationUdpLog) Type() int {
+	return 3
+}
 
 func (p *destinationUdpLog) run() {
 loop:
@@ -93,4 +96,6 @@ loop:
 			}
 		}
 	}
+
+	fmt.Println("UDP Log Done")
 }

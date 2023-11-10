@@ -23,4 +23,5 @@ const (
 type destination interface {
 	log(time.Time, Level, string, ...interface{})
 	close()
+	Type() int
 }

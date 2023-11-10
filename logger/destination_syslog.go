@@ -33,3 +33,7 @@ func (d *destinationSysLog) log(t time.Time, level Level, format string, args ..
 func (d *destinationSysLog) close() {
 	d.syslog.Close()
 }
+
+func (d *destinationSysLog) Type() int {
+	return 2
+}

@@ -89,6 +89,32 @@ func New2(level Level, destinations []Destination, filePath string, udp_server s
 	return lh, nil
 }
 
+func (p *Logger) EnableUDPLogServer(sv string, server_name string) bool {
+	dest, err := newDestinationUdpLog(sv, server_name)
+	if err != nil {
+		return false
+	}
+	p.destinations = append(p.destinations, dest)
+	return true
+}
+
+func removea[T any](slice []T, s int) []T {
+	return append(slice[:s], slice[s+1:]...)
+}
+
+func (p *Logger) DisableUDPLogServer() {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	for i, dest := range p.destinations {
+		if dest.Type() == 3 {
+			dest.close()
+			p.destinations = removea(p.destinations, i)
+			break
+		}
+	}
+}
+
 // Close closes a log handler.
 func (lh *Logger) Close() {
 	for _, dest := range lh.destinations {
