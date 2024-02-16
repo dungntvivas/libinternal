@@ -3,7 +3,7 @@ package main
 import (
 	"time"
 
-	"github.com/DungntVccorp/libinternal/logger"
+	"github.com/dungntvivas/libinternal/logger"
 )
 
 func fnlog() {

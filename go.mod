@@ -1,4 +1,4 @@
-module github.com/DungntVccorp/libinternal
+module github.com/dungntvivas/libinternal
 
 go 1.19
 

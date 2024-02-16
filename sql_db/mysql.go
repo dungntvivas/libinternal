@@ -2,10 +2,11 @@ package sqldb
 
 import (
 	"fmt"
-	"github.com/DungntVccorp/libinternal/logger"
+	"time"
+
+	"github.com/dungntvivas/libinternal/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"time"
 )
 
 type Mysql_db struct {
